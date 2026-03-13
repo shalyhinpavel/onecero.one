@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+sentence-transformers>=5.1.2
+torch>=2.8.0
+transformers
+docling
+optimum[onnxruntime]
