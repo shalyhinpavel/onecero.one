@@ -1,0 +1,61 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Secrets / Environment
+.env
+.env.local
+ROADMAP.md
+
+# Project Data & Benchmarks (Local only)
+private_data/
+local_storage/
+temp_e2e_docs/
+.benchmarks/
+.local_docs/
+.onecero/
+benchmark_failures.json
+hotpot_100.json
+*.log
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+
+# IDEs
+.vscode/
+.idea/
+.cursor/
+
+# Rust / Cargo
+**/target/
+**/*.rs.bk
+Cargo.lock
+
+# Data & Database (Local)
+local_storage/
+core/local_storage/
+sidecar/local_storage/
+*.db
+*.lancedb
+
+# Temp / Sidecar
+temp_*
+sidecar/__pycache__/

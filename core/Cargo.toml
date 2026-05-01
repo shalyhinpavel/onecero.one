@@ -1,0 +1,27 @@
+[package]
+name = "oneceroone-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Async runtime and web framework
+tokio = { version = "1.36", features = ["full", "process"] }
+axum = "0.7"
+reqwest = { version = "0.12", features = ["json"] }
+
+# Data persistence and search
+lance = "0.12"
+tantivy = "0.22"
+
+# Arrow ecosystem for LanceDB
+arrow = "51.0"
+arrow-array = "51.0"
+arrow-schema = "51.0"
+
+# Serialization and Utilities
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dotenvy = "0.15"
+chrono = "=0.4.38"
+uuid = { version = "1.8", features = ["v4"] }
+futures = "0.3.32"

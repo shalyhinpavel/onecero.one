@@ -1,0 +1,19 @@
+#!/bin/bash
+# 1C1 CLI Wrapper
+
+# Navigate to script directory
+cd "$(dirname "$0")"
+
+# Activate virtual environment if it exists (for the requests module)
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+elif [ -d "sidecar/.venv" ]; then
+    source sidecar/.venv/bin/activate
+fi
+
+# Run the python CLI
+if command -v python3 &>/dev/null; then
+    python3 cli/main.py "$@"
+else
+    python cli/main.py "$@"
+fi
