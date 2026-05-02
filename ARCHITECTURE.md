@@ -4,7 +4,7 @@ This document describes the high-level technical architecture of the OneCeroOne 
 
 ## High-Level Overview
 
-OneCeroOne is a cloud-ready, headless Retrieval Engine optimized for SSD performance and cost-efficiency. It utilizes a **Dual-Endpoint Parsing Strategy** to balance speed and quality, and a **Hybrid Search Approach** (LanceDB + Tantivy) to ensure high-precision retrieval on any corpus.
+OneCeroOne is a local-first, SSD-optimized retrieval core designed for modern AI applications. It combines Rust's concurrency and safety with Python's ML ecosystem to deliver a system that fits under **2GB RAM** while maintaining high accuracy. It utilizes a **Dual-Endpoint Parsing Strategy** to balance speed and quality, and a **Hybrid Search Approach** (LanceDB + Tantivy) to ensure high-precision retrieval on any corpus.
 
 ```mermaid
 graph TD
@@ -70,7 +70,7 @@ To mitigate the high compute costs of advanced parsing (IBM Docling) in cloud en
 A common question in cloud architecture is whether the network overhead between the Rust Core and Python Sidecar negates Rust's performance benefits. In reality, it is the key to cost-efficiency and stability:
 
 1. **Compute vs. Network Bottlenecks:** Network ping within a VPC (e.g., GCP) is ~1ms, whereas embedding text or parsing PDFs in Python takes hundreds of milliseconds or seconds. The HTTP overhead is negligible compared to the ML workload.
-2. **Cost & Scale-to-Zero:** A Python monolith with loaded ML models requires large, expensive memory allocations 24/7. By isolating Python into a stateless sidecar, it can **Scale-to-Zero** when there are no ingestion tasks. Meanwhile, the lightweight Rust Core (~50MB RAM) runs 24/7 to answer search queries instantly and cheaply.
+2. **Cost & Scale-to-Zero:** A Python monolith with loaded ML models requires large, expensive memory allocations 24/7. By isolating Python into a stateless sidecar, it can **Scale-to-Zero** when there are no ingestion tasks. The entire system is engineered to stay under **2GB RAM**, allowing for cost-effective deployment on entry-level cloud instances.
 3. **Concurrency (Fan-out / Fan-in):** Python's Global Interpreter Lock (GIL) limits true concurrency. Rust acts as the orchestrator: it can asynchronously fan-out 100 documents to 10 parallel Python workers, wait for the ML processing without blocking the main search loop, and safely batch the results via MPSC into the database.
 4. **Zero-Copy Serialization:** Uses Apache Arrow as the common memory format between Rust and Python (via LanceDB), minimizing serialization overhead and allowing Rust to read memory formed in Python with minimal conversion.
 

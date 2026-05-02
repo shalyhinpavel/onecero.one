@@ -59,3 +59,5 @@ sidecar/local_storage/
 # Temp / Sidecar
 temp_*
 sidecar/__pycache__/
+
+STORY.md

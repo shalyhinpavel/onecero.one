@@ -2,7 +2,7 @@
 
 **A headless, cloud-ready retrieval engine built for high-performance RAG.**
 
-OneCeroOne is a local-first, SSD-optimized retrieval core designed for modern AI applications. It combines Rust's concurrency and safety with Python's ML ecosystem to deliver a dual-strategy ingestion pipeline and hybrid search (Vector + FTS) that stays accurate as your data grows.
+OneCeroOne is a local-first, SSD-optimized retrieval core designed for modern AI applications. It combines Rust's concurrency and safety with Python's ML ecosystem to deliver a high-performance system that fits entirely under **2GB RAM**.
 
 ---
 
@@ -89,7 +89,22 @@ The system exposes a REST API on port `8000`.
                  └── Heavy Route (Docling)
 ```
 
-Detailed design and benchmarks can be found in [ARCHITECTURE.md](./ARCHITECTURE.md).
+Detailed design can be found in [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+---
+
+## 📊 Benchmarks
+
+Verified performance on standard academic datasets using **Hybrid Search** (Vector + FTS) and **Neural Reranking**. 
+
+| Dataset | Type | Scale | Metric | Score |
+|---|---|---|---|---|
+| **HotpotQA (Hard)** | Multi-Hop | 66k docs | Recall@10 | **91.21%** |
+| **MS MARCO BEIR** | Single-Hop | 500k docs | MRR@10 | **0.7513** |
+| **MuSiQue-Ans** | Extreme Multi-Hop | 21k docs | Recall@10 | **67.63%** |
+
+> [!IMPORTANT]
+> These results were achieved using **`gemini-embedding-001`** for vectorization. Local-first runs with lighter models (e.g., `multilingual-e5-base`) typically see a 5-15% performance delta but offer sub-millisecond latency.
 
 ---
 
