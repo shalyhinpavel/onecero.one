@@ -53,6 +53,8 @@ struct IngestItem {
 #[derive(Serialize, Deserialize)]
 struct EncodeRequest {
     texts: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    is_query: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -101,7 +103,10 @@ async fn search(
     Query(params): Query<SearchQuery>,
 ) -> Json<serde_json::Value> {
     // 1. Encode query via sidecar
-    let enc_req = EncodeRequest { texts: vec![params.query.clone()] };
+    let enc_req = EncodeRequest {
+        texts: vec![params.query.clone()],
+        is_query: Some(true),
+    };
     let enc_res: EncodeResponse = state.http_client.post(format!("{}/encode", state.sidecar_url))
         .json(&enc_req)
         .send().await.unwrap().json().await.unwrap();
@@ -200,7 +205,10 @@ async fn ingest_batch(
     };
 
     // 2. Batch Embedding
-    let enc_req = EncodeRequest { texts: clean_texts.clone() };
+    let enc_req = EncodeRequest {
+        texts: clean_texts.clone(),
+        is_query: Some(false),
+    };
     let enc_res_raw = state.http_client.post(format!("{}/encode", state.sidecar_url))
         .json(&enc_req)
         .send().await;

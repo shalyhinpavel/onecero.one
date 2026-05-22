@@ -71,8 +71,8 @@ impl VectorDB {
         }
         
         for vec in vectors {
-            if vec.len() != 768 {
-                return Err("Vector dimension must be exactly 768".into());
+            if vec.len() != 640 {
+                return Err("Vector dimension must be exactly 640".into());
             }
         }
 
@@ -97,7 +97,7 @@ impl VectorDB {
         ];
 
         let schema = Arc::new(ArrowSchema::new(vec![
-            Field::new("vector", DataType::FixedSizeList(Arc::new(Field::new("item", DataType::Float32, true)), 768), false),
+            Field::new("vector", DataType::FixedSizeList(Arc::new(Field::new("item", DataType::Float32, true)), 640), false),
             Field::new("text", DataType::Utf8, false),
             Field::new("entities", DataType::Utf8, false),
             Field::new("metadata", DataType::Struct(metadata_fields.clone().into()), false),
@@ -105,8 +105,8 @@ impl VectorDB {
         ]));
 
         // Build columns
-        let float_builder = Float32Builder::with_capacity(docs.len() * 768);
-        let mut vector_builder = FixedSizeListBuilder::new(float_builder, 768);
+        let float_builder = Float32Builder::with_capacity(docs.len() * 640);
+        let mut vector_builder = FixedSizeListBuilder::new(float_builder, 640);
         let mut text_builder = StringBuilder::new();
         let mut entities_builder = StringBuilder::new();
         

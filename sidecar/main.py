@@ -90,6 +90,39 @@ class DoclingProcessor:
 app = FastAPI(title="1C1 Headless Sidecar (ML)")
 doc_processor = DoclingProcessor()
 
+class HarrierEmbeddingModel:
+    def __init__(self, model_path: str):
+        import llama_cpp.llama_cpp
+        llama_cpp.llama_cpp.llama_max_parallel_sequences = lambda: 1
+        from llama_cpp import Llama
+        device = os.getenv("DEVICE", "cpu").lower()
+        n_gpu = 0 if device == "cpu" else -1
+        print(f"Initializing Llama with model_path={model_path}, n_gpu_layers={n_gpu}")
+        self.llm = Llama(
+            model_path=model_path,
+            embedding=True,
+            n_ctx=4096,
+            n_batch=4096,
+            n_gpu_layers=n_gpu,
+            verbose=False
+        )
+
+    def encode(self, texts: List[str], show_progress_bar: bool = False, batch_size: int = 4):
+        import numpy as np
+        embeddings = []
+        for text in texts:
+            self.llm.reset()
+            res = self.llm.create_embedding(text)
+            emb = res["data"][0]["embedding"]
+            if isinstance(emb, dict) and "embedding" in emb:
+                emb = emb["embedding"]
+            emb_arr = np.array(emb, dtype=np.float32)
+            norm = np.linalg.norm(emb_arr)
+            if norm > 1e-8:
+                emb_arr = emb_arr / norm
+            embeddings.append(emb_arr.tolist())
+        return np.array(embeddings)
+
 MODELS = {}
 
 def get_model(model_name: str, task: str):
@@ -100,11 +133,14 @@ def get_model(model_name: str, task: str):
         print(f"Loading {task} model: {model_name} on {device} (engine: {engine})...")
         
         if task == "embedding":
-            from sentence_transformers import SentenceTransformer
-            if engine == "onnx":
-                MODELS[key] = SentenceTransformer(model_name, device=device, backend="onnx")
+            if "harrier" in model_name.lower():
+                MODELS[key] = HarrierEmbeddingModel(model_name)
             else:
-                MODELS[key] = SentenceTransformer(model_name, device=device)
+                from sentence_transformers import SentenceTransformer
+                if engine == "onnx":
+                    MODELS[key] = SentenceTransformer(model_name, device=device, backend="onnx")
+                else:
+                    MODELS[key] = SentenceTransformer(model_name, device=device)
         else: # reranker
             from sentence_transformers import CrossEncoder
             MODELS[key] = CrossEncoder(model_name, device=device)
@@ -114,6 +150,7 @@ def get_model(model_name: str, task: str):
 # API Schemas
 class EncodeRequest(BaseModel):
     texts: List[str]
+    is_query: bool = False
 
 class RerankRequest(BaseModel):
     query: str
@@ -129,9 +166,21 @@ class SemanticChunkRequest(BaseModel):
 
 @app.post("/encode")
 def encode(req: EncodeRequest):
-    model = get_model(os.getenv("MODEL_NAME", "intfloat/multilingual-e5-base"), "embedding")
-    prefixed = [f"passage: {t}" for t in req.texts]
-    # Small internal batch to keep RAM stable
+    model_name = os.getenv("MODEL_NAME", "intfloat/multilingual-e5-base")
+    model = get_model(model_name, "embedding")
+    
+    if "harrier" in model_name.lower():
+        if req.is_query:
+            task_desc = "Given a web search query, retrieve relevant passages that answer the query"
+            prefixed = [f"Instruct: {task_desc}\nQuery: {t}" for t in req.texts]
+        else:
+            prefixed = req.texts
+    else:
+        if req.is_query:
+            prefixed = [f"query: {t}" for t in req.texts]
+        else:
+            prefixed = [f"passage: {t}" for t in req.texts]
+            
     embeddings = model.encode(prefixed, show_progress_bar=False, batch_size=4).tolist()
     return {"embeddings": embeddings}
 
@@ -195,10 +244,13 @@ def semantic_chunk(req: SemanticChunkRequest):
     if len(sentences) == 1:
         return {"chunks": sentences}
         
-    model = get_model(os.getenv("MODEL_NAME", "intfloat/multilingual-e5-base"), "embedding")
+    model_name = os.getenv("MODEL_NAME", "intfloat/multilingual-e5-base")
+    model = get_model(model_name, "embedding")
     
-    # Embed sentences individually (this is extremely fast on small strings)
-    prefixed = [f"passage: {s}" for s in sentences]
+    if "harrier" in model_name.lower():
+        prefixed = sentences
+    else:
+        prefixed = [f"passage: {s}" for s in sentences]
     embeddings = model.encode(prefixed, show_progress_bar=False)
     if not isinstance(embeddings, torch.Tensor):
         embeddings = torch.tensor(embeddings)
