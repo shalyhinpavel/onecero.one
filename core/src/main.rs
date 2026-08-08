@@ -262,6 +262,7 @@ async fn ingest_batch(
 
 #[tokio::main]
 async fn main() {
+    dotenvy::dotenv().ok();
     println!("Starting OS Level processes...");
 
     // Spawn Sidecar.
@@ -282,7 +283,9 @@ async fn main() {
     tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
     // Load Database
-    let db = Arc::new(VectorDB::new("../local_storage/lancedb_rust"));
+    let storage_uri = std::env::var("STORAGE_URI").unwrap_or_else(|_| "../local_storage/lancedb_rust".to_string());
+    println!("Initializing database at: {}", storage_uri);
+    let db = Arc::new(VectorDB::new(&storage_uri));
 
     let (ingest_tx, mut ingest_rx) = mpsc::channel::<IngestTask>(100);
     
